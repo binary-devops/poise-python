@@ -28,11 +28,14 @@ module PoisePython
       provides(:system)
       packages('python', {
         debian: {
+          '~> 10.0' => %w{python3.6 python2.7},
+          '~> 9.0' => %w{python3.5 python2.7},
           '~> 8.0' => %w{python3.4 python2.7},
           '~> 7.0' => %w{python3.2 python2.7 python2.6},
           '~> 6.0' => %w{python3.1 python2.6 python2.5},
         },
         ubuntu: {
+          '18.04' => %w{python3.6 python2.7},
           '16.04' => %w{python3.5 python2.7},
           '14.04' => %w{python3.4 python2.7},
           '12.04' => %w{python3.2 python2.7},
@@ -54,9 +57,22 @@ module PoisePython
 
       def install_python
         install_system_packages
+        if node.platform_family?('debian') && system_package_name == 'python3.6'
+          # Ubuntu 18.04 and Debian 10 have some weird dependency fuckery going on.
+          _options = options
+          package %w{python3.6-venv python3.6-distutils} do
+            action(:upgrade) if _options['package_upgrade']
+          end
+        end
       end
 
       def uninstall_python
+        if node.platform_family?('debian') && system_package_name == 'python3.6'
+          # Other side of the depdency nonsense.
+          package %w{python3.6-venv python3.6-distutils} do
+            action(:purge)
+          end
+        end
         uninstall_system_packages
       end
 
@@ -71,7 +87,7 @@ module PoisePython
           end
           # Aliases for 2 and 3.
           if version == '3' || version == ''
-            names.concat(%w{python3.5 python35 python3.4 python34 python3.3 python33 python3.2 python32 python3.1 python31 python3.0 python30 python3})
+            names.concat(%w{python3.7 python37 python3.6 python36 python3.5 python35 python3.4 python34 python3.3 python33 python3.2 python32 python3.1 python31 python3.0 python30 python3})
           end
           if version == '2' || version == ''
             names.concat(%w{python2.7 python27 python2.6 python26 python2.5 python25})
